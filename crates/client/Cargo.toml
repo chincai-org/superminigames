@@ -1,0 +1,9 @@
+[package]
+name = "superminigames-client"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+superminigames-core = { path = "../core" }
+superminigames-protocol = { path = "../protocol" }

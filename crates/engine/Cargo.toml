@@ -1,0 +1,9 @@
+[package]
+name = "superminigames-engine"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+superminigames-core = { path = "../core" }
+superminigames-logic = { path = "../logic" }

@@ -1,0 +1,18 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/logic",
+    "crates/core",
+    "crates/protocol",
+    "crates/engine",
+    "crates/server",
+    "crates/client",
+    "crates/games/chess",
+    "crates/games/checkers",
+    "crates/games/xiangqi",
+    "crates/games/shogi",
+    "crates/games/doushouqi",
+]
+
+[profile.release]
+panic = "unwind"

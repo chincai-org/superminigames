@@ -1,0 +1,93 @@
+# cargo-deny configuration.
+# REQ: WSP-6, CI-1, SEC-13
+#
+# CI-1 dependency edges are enforced in two places:
+#   * the workspace-internal bans below, and
+#   * scripts/check-deps.sh for edges to third-party crates (tokio, serde,
+#     axum, sqlx, chrono, ...) and for game-crate-to-game-crate edges.
+#
+# cargo-deny bans are global. `wrappers` names the only crates allowed to
+# depend on a denied crate, so a third-party crate such as tokio cannot be
+# banned this way without also denying its legitimate third-party parents
+# (axum, hyper, tokio-util, ...). The script checks those direct edges.
+
+[graph]
+targets = []
+all-features = false
+no-default-features = false
+exclude-dev = false
+
+[output]
+feature-depth = 1
+
+[advisories]
+version = 2
+db-urls = ["https://github.com/rustsec/advisory-db"]
+ignore = []
+yanked = "deny"
+
+[licenses]
+version = 2
+allow = [
+  "MIT",
+  "Apache-2.0",
+  "Apache-2.0 WITH LLVM-exception",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "ISC",
+  "Unicode-3.0",
+  "Zlib",
+  "MPL-2.0",
+  "CC0-1.0",
+  "Unlicense",
+]
+confidence-threshold = 0.8
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+highlight = "all"
+workspace-default-features = "allow"
+external-default-features = "allow"
+skip = []
+skip-tree = []
+
+# WSP-2: core <- protocol, engine, server, client and game crates.
+[[bans.deny]]
+name = "superminigames-core"
+wrappers = [
+  "superminigames-protocol",
+  "superminigames-engine",
+  "superminigames-server",
+  "superminigames-client",
+  "superminigames-games-chess",
+  "superminigames-games-checkers",
+  "superminigames-games-xiangqi",
+  "superminigames-games-shogi",
+  "superminigames-games-doushouqi",
+]
+reason = "WSP-2: only protocol, engine, server, client and game crates may depend on core"
+
+# WSP-2: logic <- core, engine.
+[[bans.deny]]
+name = "superminigames-logic"
+wrappers = ["superminigames-core", "superminigames-engine"]
+reason = "WSP-2, VER-11: only core and engine may depend on logic"
+
+# WSP-2: protocol <- server, client.
+[[bans.deny]]
+name = "superminigames-protocol"
+wrappers = ["superminigames-server", "superminigames-client"]
+reason = "WSP-2: only server and client may depend on protocol"
+
+# WSP-2: engine <- server.
+[[bans.deny]]
+name = "superminigames-engine"
+wrappers = ["superminigames-server"]
+reason = "WSP-2: only server may depend on engine"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []

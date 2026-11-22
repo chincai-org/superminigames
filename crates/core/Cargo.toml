@@ -1,0 +1,11 @@
+[package]
+name = "superminigames-core"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+superminigames-logic = { path = "../logic" }
+
+[features]
+test-support = []

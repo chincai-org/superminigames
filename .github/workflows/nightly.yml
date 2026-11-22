@@ -1,0 +1,51 @@
+# SuperMiniGames nightly verification (spec 19, plan 6.1).
+#
+# M0 stub. Nightly work is defined by plan 6.1: every fuzz target in VER-21 for
+# 10 minutes each (VER-20), the load test T-PERF-1, and Criterion benchmarks
+# reported non-blocking (VER-30, VER-32). None of those exist yet:
+#   * fuzz targets arrive in milestone M2, and
+#   * Criterion benchmarks are not allowed before the project is
+#     feature-complete (VER-30; T8.3 runs the load test).
+#
+# So this workflow is valid, runs nothing destructive, and only reports the stub
+# state. It must stay green on an empty workspace. The blocking checks live in
+# ci.yml; this file will grow the real nightly jobs in M2/T8.3/VER-30.
+
+name: Nightly
+
+on:
+  schedule:
+    # 03:17 UTC daily, off the top of the hour to avoid the scheduler rush.
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+# Scheduled and manually dispatched only; no secrets, read-only contents.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  nightly-stub:
+    name: nightly placeholder
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # TODO(M2, T8.3, VER-30): replace this placeholder with the real nightly
+      # work from plan 6.1:
+      #   * each VER-21 fuzz target for 10 minutes (VER-20):
+      #       cargo fuzz run <target> -- -max_total_time=600
+      #   * the load test T-PERF-1 (tools/loadtest, 50,000 matches).
+      #   * the Criterion benchmarks, reported non-blocking (VER-30, VER-32):
+      #       cargo bench
+      # A self-hosted or larger runner may be needed for the load test.
+      - name: Report nightly stub state
+        run: |
+          set -euo pipefail
+          echo "Nightly stub (spec/PLAN.md section 6.1): nothing to run yet."
+          echo "Fuzz targets (VER-21) arrive in M2; Criterion benches need a"
+          echo "feature-complete project (VER-30); the load test is T8.3."
+          echo "The blocking checks run in ci.yml on every push and pull request."

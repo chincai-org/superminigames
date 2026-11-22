@@ -1,0 +1,218 @@
+# SuperMiniGames pull-request CI (spec 19.7, plan 6.1).
+#
+# This workflow carries the blocking CI checks CI-1..CI-6 and CI-8 plus the
+# build, test, format, wasm and supply-chain checks. It needs no secrets and no
+# write access: `contents: read` is enough for every step.
+#
+# VER-19 staging: Verus is introduced in the hardening milestone (plan M8).
+# Until then VER-12..VER-18, T-VER-1, T-VER-2 and T-VER-4 are NOT enforced in
+# CI. The escape-hatch scan and the clause-ID scan below therefore run
+# NON-BLOCKING; task T8.2 flips them to blocking when Verus lands.
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# Cancel superseded runs for the same ref, so a new push to a PR stops the
+# older in-flight run instead of queueing behind it.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  ci:
+    name: build, lint and policy checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # rust-toolchain.toml pins the channel; rustup installs it (default
+      # profile: rustc, cargo, rustfmt, clippy) on first use, then adds the two
+      # components the later steps need.
+      - name: Install Rust toolchain
+        run: |
+          set -euo pipefail
+          rustup show
+          rustup component add clippy rustfmt
+
+      - name: Build workspace
+        run: cargo build --workspace --all-targets
+
+      - name: Test workspace
+        run: cargo test --workspace
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      # CI-1 (WSP-1, WSP-2, WSP-6, PRO-4, STO-1, VER-11): dependency rules.
+      - name: Check dependency rules (CI-1)
+        run: bash scripts/check-deps.sh
+
+      # CI-2 (RNG-7, RNG-8, GAM-2, TYP-3) and CI-6 (ARC-2, PERF-3).
+      # clippy.toml is workspace-global, so the `disallowed_methods` and
+      # `disallowed_types` lists apply to every package; only the lint LEVEL can
+      # be chosen per invocation. Pass A denies those lists for the crates the
+      # restriction targets: logic, core, engine and every game crate.
+      - name: Clippy restricted crates (CI-2, CI-6)
+        run: |
+          cargo clippy \
+            -p superminigames-logic -p superminigames-core -p superminigames-engine \
+            -p superminigames-games-chess -p superminigames-games-checkers \
+            -p superminigames-games-xiangqi -p superminigames-games-shogi \
+            -p superminigames-games-doushouqi \
+            --all-targets -- \
+            -D clippy::disallowed_methods -D clippy::disallowed_types -D warnings
+
+      # Pass B, the permissive half of the split: it covers the crates outside
+      # CI-2's scope. Server, client and protocol are not restricted by CI-2
+      # (the server legitimately uses HashMap, locks and OS randomness), so
+      # their run turns the same two lists off.
+      - name: Clippy server and client (CI-2, CI-6 permissive pass)
+        run: |
+          cargo clippy \
+            -p superminigames-server -p superminigames-client -p superminigames-protocol \
+            --all-targets -- \
+            -D warnings -A clippy::disallowed_methods -A clippy::disallowed_types
+
+      # CI-3 (SCR-10): scoring and ranking use integer scale 12 only; no
+      # floating point. Applies to logic and the core scoring adapters.
+      - name: Clippy float_arithmetic (CI-3)
+        run: |
+          cargo clippy \
+            -p superminigames-logic -p superminigames-core \
+            --all-targets -- -D clippy::float_arithmetic
+
+      # CI-4 (VER-4, SEC-16): every crate root declares
+      # #![forbid(unsafe_code)] as an inner attribute. Library roots, binary
+      # roots (src/main.rs) and extra binaries (src/bin/*.rs) are all checked.
+      - name: Check forbid(unsafe_code) (CI-4)
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          libs=(crates/*/src/lib.rs crates/*/src/main.rs crates/*/src/bin/*.rs crates/games/*/src/lib.rs)
+          if [ "${#libs[@]}" -eq 0 ]; then
+            echo "::error::no crate roots found (CI-4, VER-4, SEC-16)"
+            exit 1
+          fi
+          missing=0
+          for lib in "${libs[@]}"; do
+            if ! grep -qE '^[[:space:]]*#!\[forbid\(unsafe_code\)\]' "$lib"; then
+              echo "::error file=$lib::missing #![forbid(unsafe_code)] (CI-4, VER-4, SEC-16)"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+          echo "CI-4: every crate root declares #![forbid(unsafe_code)]"
+
+      # CI-5 (PERF-10): any `tracing` dependency must enable the
+      # `release_max_level_info` feature so trace/debug are compiled out of
+      # release builds. Intentionally vacuous today: the workspace has no
+      # `tracing` dependency yet, so this prints a notice and passes, and starts
+      # enforcing automatically as soon as one is added.
+      - name: Check tracing release_max_level_info (CI-5)
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          import pathlib
+          import sys
+          import tomllib
+
+          sections = ("dependencies", "dev-dependencies", "build-dependencies")
+          skip_dirs = {"target", ".git", "verus-x86-linux"}
+
+          manifests = []
+          for dirpath, dirnames, filenames in os.walk("."):
+              dirnames[:] = [d for d in dirnames if d not in skip_dirs]
+              if "Cargo.toml" in filenames:
+                  manifests.append(pathlib.Path(dirpath) / "Cargo.toml")
+          manifests.sort()
+
+          offenders = []
+          found = 0
+          for path in manifests:
+              with path.open("rb") as fh:
+                  data = tomllib.load(fh)
+              containers = [data]
+              workspace = data.get("workspace")
+              if isinstance(workspace, dict):
+                  containers.append(workspace)
+              for target in data.get("target", {}).values():
+                  if isinstance(target, dict):
+                      containers.append(target)
+              for container in containers:
+                  for section in sections:
+                      deps = container.get(section)
+                      if not isinstance(deps, dict) or "tracing" not in deps:
+                          continue
+                      found += 1
+                      spec = deps["tracing"]
+                      features = spec.get("features", []) if isinstance(spec, dict) else []
+                      if "release_max_level_info" not in features:
+                          offenders.append(f"{path}:{section}.tracing")
+
+          if offenders:
+              print("CI-5 (PERF-10): tracing without release_max_level_info:", file=sys.stderr)
+              for offender in offenders:
+                  print(f"  error: {offender}", file=sys.stderr)
+              sys.exit(1)
+          if found == 0:
+              print("CI-5 (PERF-10): no tracing dependency found; the check is vacuous "
+                    "today and will enforce automatically once tracing is added")
+          else:
+              print(f"CI-5 (PERF-10): OK ({found} tracing declaration(s) enable "
+                    f"release_max_level_info)")
+          PY
+
+      # CI-8 (VER-40..VER-43): an uncovered MUST requirement or a stale
+      # spec/TRACEABILITY.md fails the build.
+      - name: Check traceability (CI-8)
+        run: python3 spec/traceability.py --check
+
+      # wasm build (T-WSP-1, WSP-3, WSP-6, PRO-4, STO-1): core and protocol must
+      # compile for wasm32-unknown-unknown for the browser client.
+      - name: Install wasm32 target
+        run: rustup target add wasm32-unknown-unknown
+
+      - name: Build core and protocol for wasm32 (WSP-3, WSP-6, PRO-4, STO-1)
+        run: cargo build -p superminigames-core -p superminigames-protocol --target wasm32-unknown-unknown
+
+      # Supply chain (SEC-13, T-SEC-8): cargo-deny uses the committed
+      # Cargo.lock and deny.toml; Cargo.lock is committed (SEC-13).
+      - name: cargo-deny (SEC-13, T-SEC-8)
+        uses: EmbarkStudios/cargo-deny-action@v2
+
+      - name: Install cargo-audit
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-audit
+
+      - name: cargo-audit (SEC-13, T-SEC-8)
+        run: cargo audit
+
+      # VER-19 staging: these two scans are NOT enforced until milestone M8.
+      # They run non-blocking for now; task T8.2 removes `continue-on-error`
+      # (and adds the Verus step) once `logic` is set up for Verus.
+      - name: Verus escape-hatch scan (VER-17, T-VER-1) [non-blocking until M8]
+        continue-on-error: true
+        run: bash scripts/check-verus-escapes.sh
+
+      - name: Clause-ID scan (VER-18, T-VER-4) [non-blocking until M8]
+        continue-on-error: true
+        run: bash scripts/check-clause-ids.sh
+
+      # T8.2 placeholder: when Verus lands (plan M8, VER-10, VER-12, T-VER-2)
+      # add a blocking step here:
+      #   cargo verus verify -p superminigames-logic
+      # Verus is deliberately not installed or run before T8.2 (VER-19).

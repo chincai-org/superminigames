@@ -1,0 +1,48 @@
+# Clippy configuration for CI-2, CI-3 and CI-6 (spec 19.7).
+#
+# Clippy reads exactly one clippy.toml per invocation, so both lists below are
+# workspace-global: this repo has no per-crate overlay and no CLIPPY_CONF_DIR
+# file. The lists decide WHICH paths are disallowed; the lint LEVEL is chosen
+# per clippy invocation on the command line, which is also what turns these two
+# allow-by-default lints on for a crate. CI runs:
+#
+#   CI-2 (RNG-7, RNG-8, GAM-2, TYP-3) and CI-6 (ARC-2, PERF-3):
+#     cargo clippy -p superminigames-engine -p superminigames-core \
+#       -p superminigames-logic -p superminigames-games-chess \
+#       -p superminigames-games-checkers -p superminigames-games-xiangqi \
+#       -p superminigames-games-shogi -p superminigames-games-doushouqi \
+#       -- -D clippy::disallowed_methods -D clippy::disallowed_types
+#
+#   CI-3 (SCR-10):
+#     cargo clippy -p superminigames-logic -p superminigames-core \
+#       -- -D clippy::float_arithmetic
+#
+#   server and client are outside CI-2's and CI-6's scope (they may use locks,
+#   hashed maps and OS randomness), so their CI run turns the same lists off:
+#     cargo clippy -p superminigames-server -p superminigames-client \
+#       -- -A clippy::disallowed_methods -A clippy::disallowed_types
+#
+# CI-2 denies Instant::now outside the engine. One global list cannot exempt a
+# single crate, so `std::time::Instant::now` is denied for every crate; the
+# engine keeps time with tokio::time::Instant, which is what the paused-time
+# timer tests need anyway.
+#
+# Command-line lint levels do not overrule the source: a crate- or module-level
+# `#[allow(...)]` still wins over the `-D` above, so these denies must be
+# satisfied rather than silenced locally.
+
+disallowed-methods = [
+  { path = "std::time::SystemTime::now", reason = "RNG-7: wall-clock time is forbidden in engine, core, logic and game crates" },
+  { path = "std::time::Instant::now", reason = "CI-2: use tokio::time::Instant so timers stay virtual and paused-time tests work" },
+  { path = "uuid::Uuid::new_v4", reason = "RNG-7, TYP-3: ids are supplied by the server" },
+  { path = "rand::thread_rng", reason = "RNG-7: use the core RNG helpers" },
+  { path = "std::thread::spawn", reason = "GAM-2, ARC-2: no OS thread per match or connection" },
+]
+
+disallowed-types = [
+  { path = "rand::rngs::OsRng", reason = "RNG-7: OS randomness is server-only, use the core RNG helpers" },
+  { path = "std::collections::HashMap", reason = "RNG-8: use BTreeMap or Vec" },
+  { path = "std::collections::HashSet", reason = "RNG-8: use BTreeSet or Vec" },
+  { path = "std::sync::Mutex", reason = "CI-6, ARC-2: no Mutex in engine" },
+  { path = "std::sync::RwLock", reason = "CI-6, ARC-2: no RwLock in engine" },
+]

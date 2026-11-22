@@ -1,0 +1,10 @@
+[package]
+name = "superminigames-server"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+superminigames-core = { path = "../core" }
+superminigames-engine = { path = "../engine" }
+superminigames-protocol = { path = "../protocol" }
