@@ -5,3 +5,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
+
+[dev-dependencies]
+# VER-5: property tests cover the VER-14 properties until Verus lands (T8.2).
+proptest = "1"

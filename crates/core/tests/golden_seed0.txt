@@ -1,0 +1,15 @@
+# Golden selection for seed 0 (RNG-9, T-RNG-1, T-RNG-7).
+# Pool is the registry sorted as [A,B,C,D,E] and each round makes exactly
+# one draw: pool[uniform_index(&mut chacha_from_seed(0, k), 5)] (RNG-3, RNG-4).
+# opening_bit is chacha_from_seed(0, 1<<63).next_u64() & 1 (RNG-11).
+opening_bit=1
+round_0=D
+round_1=A
+round_2=E
+round_3=D
+round_4=A
+round_5=C
+round_6=C
+round_7=D
+round_8=C
+round_9=A

@@ -58,13 +58,13 @@ Until T8.2, `logic` is covered by `proptest`. Do not set up or run Verus before 
 
 | St | ID | Task | Needs | Run | Owns | Spec | Done when |
 |---|---|---|---|---|---|---|---|
-| [ ] | T1.1 | `logic`: `places_from_keys`, `points_for_place`, `round_points` | T0.1 | P2 | `crates/logic/src/{places,points}.rs`, `crates/logic/tests/places_points.rs` | SCR-3 to SCR-8, SCR-11 | T-SCR-1 to T-SCR-4, T-SCR-11 and proptest properties pass; also T-SCR-7 |
-| [ ] | T1.2 | `logic`: `rank_players`, `next_streak`, `add_points`, `fill_missing_outcome` | T0.1 | P2 | `crates/logic/src/{ranking,streak,outcome}.rs`, `crates/logic/tests/rank_streak.rs` | FIN-1, PRS-2, PRS-3, SCR-10, RND-9 | T-SCR-8, T-SCR-9, T-PRS-2, T-PRS-3 pass |
-| [ ] | T1.3 | `logic`: `Phase`, `PhaseTrigger`, `next_phase` | T0.1 | P2 | `crates/logic/src/phase.rs`, `crates/logic/tests/phase.rs` | 12.1, ARC-5 | every transition in 12.1 tested; forbidden ones return `None` |
-| [ ] | T1.4 | `core`: ids, config, outcome, `Game` trait and types, errors | T0.1 | P2 | `crates/core/src/{ids,config,game,outcome,error}.rs` | 3, TYP-1 | compiles; serde round-trip tests pass |
-| [ ] | T1.5 | `core`: RNG helpers, scoring adapters | T1.1 to T1.4 | P3 | `crates/core/src/{rng,scoring}.rs` | RNG-1 to RNG-5, SCR-2 | T-RNG-2 passes |
-| [ ] | T1.6 | Generate and commit the golden files | T1.5 | HUMAN | `crates/core/tests/golden_*.txt` | RNG-9, T-RNG-1, T-RNG-6, T-RNG-7 | human reviewed and committed; tests pass |
-| [ ] | T1.7 | Game conformance suite behind `test-support` | T1.4 | P3 | `crates/core/src/test_support/` | GAM-1 to GAM-8, GAM-11 | suite runs against a fake game (T-GAM-1 to T-GAM-5, T-GAM-7) |
+| [x] | T1.1 | `logic`: `places_from_keys`, `points_for_place`, `round_points` | T0.1 | P2 | `crates/logic/src/{places,points}.rs`, `crates/logic/tests/places_points.rs` | SCR-3 to SCR-8, SCR-11 | T-SCR-1 to T-SCR-4, T-SCR-11 and proptest properties pass; also T-SCR-7 |
+| [x] | T1.2 | `logic`: `rank_players`, `next_streak`, `add_points`, `fill_missing_outcome` | T0.1 | P2 | `crates/logic/src/{ranking,streak,outcome}.rs`, `crates/logic/tests/rank_streak.rs` | FIN-1, PRS-2, PRS-3, SCR-10, RND-9 | T-SCR-8, T-SCR-9, T-PRS-2, T-PRS-3 pass |
+| [x] | T1.3 | `logic`: `Phase`, `PhaseTrigger`, `next_phase` | T0.1 | P2 | `crates/logic/src/phase.rs`, `crates/logic/tests/phase.rs` | 12.1, ARC-5 | every transition in 12.1 tested; forbidden ones return `None` |
+| [x] | T1.4 | `core`: ids, config, outcome, `Game` trait and types, errors | T0.1 | P2 | `crates/core/src/{ids,config,game,outcome,error}.rs` | 3, TYP-1 | compiles; serde round-trip tests pass |
+| [x] | T1.5 | `core`: RNG helpers, scoring adapters | T1.1 to T1.4 | P3 | `crates/core/src/{rng,scoring}.rs` | RNG-1 to RNG-5, SCR-2 | T-RNG-2 passes |
+| [x] | T1.6 | Generate and commit the golden files | T1.5 | HUMAN | `crates/core/tests/golden_*.txt` | RNG-9, T-RNG-1, T-RNG-6, T-RNG-7 | human reviewed and committed; tests pass |
+| [x] | T1.7 | Game conformance suite behind `test-support` | T1.4 | P3 | `crates/core/src/test_support/` | GAM-1 to GAM-8, GAM-11 | suite runs against a fake game (T-GAM-1 to T-GAM-5, T-GAM-7) |
 
 ### M2 Engine without network
 

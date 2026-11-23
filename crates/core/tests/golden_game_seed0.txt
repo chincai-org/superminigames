@@ -1,0 +1,7 @@
+# Golden game seeds for seed 0 (RNG-9, RNG-10, T-RNG-6).
+# game_seed(k) is the first next_u64() of chacha_from_seed(0, u64::MAX - k).
+round_0=4460565110738170292
+round_1=7688296365326560547
+round_2=14967472423537717667
+round_3=3605477272188215763
+round_4=3174241768043375388
