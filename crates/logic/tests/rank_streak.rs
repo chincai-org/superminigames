@@ -5,7 +5,7 @@
 //! VER-19: proptest covers the VER-14 properties until Verus lands in T8.2.
 
 use proptest::prelude::*;
-use superminigames_logic::outcome::{fill_missing_outcome, MissingOutcome};
+use superminigames_logic::outcome::{MissingOutcome, fill_missing_outcome};
 use superminigames_logic::ranking::{add_points, rank_players};
 use superminigames_logic::streak::next_streak;
 

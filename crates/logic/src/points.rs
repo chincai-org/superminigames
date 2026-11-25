@@ -20,7 +20,10 @@ pub fn points_for_place(n: usize, place: usize, group: usize) -> u32 {
 /// Points for every key, in input order (SCR-4, SCR-6, SCR-11).
 pub fn round_points(keys: &[(u8, i128)]) -> Vec<u32> {
     let n = keys.len();
-    debug_assert!(n >= 2, "SCR-6: a round scores at least two participants (SCP-4)");
+    debug_assert!(
+        n >= 2,
+        "SCR-6: a round scores at least two participants (SCP-4)"
+    );
     places_from_keys(keys)
         .into_iter()
         .map(|(place, group)| points_for_place(n, place, group))

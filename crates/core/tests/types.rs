@@ -2,7 +2,7 @@
 //! types (`JoinCode` validation, `GameId` byte ordering).
 
 use superminigames_core::config::{
-    GameFilterMode, MatchConfig, SettingsUpdate, MAX_PLAYERS, MIN_PLAYERS,
+    GameFilterMode, MAX_PLAYERS, MIN_PLAYERS, MatchConfig, SettingsUpdate,
 };
 use superminigames_core::error::ConfigError;
 use superminigames_core::game::{

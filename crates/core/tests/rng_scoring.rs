@@ -5,7 +5,7 @@ use rand_chacha::ChaCha8Rng;
 use rand_core::{RngCore, SeedableRng};
 use superminigames_core::outcome::{DisqualificationReason, PlayerOutcome};
 use superminigames_core::rng::{chacha_from_seed, uniform_index};
-use superminigames_core::scoring::{compute_places, key_of, points_for_place, POINTS_SCALE};
+use superminigames_core::scoring::{POINTS_SCALE, compute_places, key_of, points_for_place};
 
 #[test]
 fn t_rng_2_seed_zero_is_the_all_zero_key() {

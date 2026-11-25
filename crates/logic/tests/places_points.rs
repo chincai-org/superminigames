@@ -8,7 +8,7 @@
 
 use proptest::prelude::*;
 use superminigames_logic::places::places_from_keys;
-use superminigames_logic::points::{points_for_place, round_points, POINTS_SCALE};
+use superminigames_logic::points::{POINTS_SCALE, points_for_place, round_points};
 
 /// A `Placed(v)` key (SCR-3).
 fn placed(v: u8) -> (u8, i128) {

@@ -1,8 +1,22 @@
 [package]
 name = "superminigames-protocol"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 publish = false
 
 [dependencies]
 superminigames-core = { path = "../core" }
+serde = { version = "1", features = ["derive"] }
+serde_bytes = "0.11"
+rmp-serde = "1"
+uuid = { version = "1", features = ["serde"] }
+# PRO-1: JSON exists only behind the optional `json` debug feature.
+serde_json = { version = "1", optional = true }
+
+[features]
+json = ["dep:serde_json"]
+
+[dev-dependencies]
+# Shared test tooling (scripts/check-deps.sh): the wire-key assertions decode a
+# frame into a generic value, and the `json` feature round-trip needs it too.
+serde_json = "1"

@@ -5,7 +5,7 @@
 
 use std::collections::BTreeSet;
 
-use superminigames_logic::phase::{next_phase, Phase, PhaseTrigger};
+use superminigames_logic::phase::{Phase, PhaseTrigger, next_phase};
 
 const PHASES: [Phase; 6] = [
     Phase::Lobby,
